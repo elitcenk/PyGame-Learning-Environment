@@ -98,7 +98,6 @@ class Pipe(pygame.sprite.Sprite):
     def __init__(self,
                  SCREEN_WIDTH, SCREEN_HEIGHT, gap_start, gap_size, image_assets, scale,
                  offset=0, color="green"):
-
         self.speed = 4.0 * scale
         self.SCREEN_WIDTH = SCREEN_WIDTH
         self.SCREEN_HEIGHT = SCREEN_HEIGHT
@@ -183,13 +182,14 @@ class FlappyBird(base.PyGameWrapper):
 
     """
 
-    def __init__(self, width=288, height=512, pipe_gap=100):
+    def __init__(self, width=288, height=512, pipe_gap=100, simple=False):
 
         actions = {
             "up": K_w
         }
 
         fps = 30
+        self.simple = simple
 
         base.PyGameWrapper.__init__(self, width, height, actions=actions)
 
@@ -231,11 +231,10 @@ class FlappyBird(base.PyGameWrapper):
                 os.path.join(self._asset_dir, "%sbird-downflap.png" % c),
             ]
 
-            self.images["player"][c] = [pygame.image.load(
-                im).convert_alpha() for im in image_assets]
+            self.images["player"][c] = [pygame.image.load(im).convert_alpha() for im in image_assets]
 
         self.images["background"] = {}
-        for b in ["day", "night"]:
+        for b in ["day", "night", "black"]:
             path = os.path.join(self._asset_dir, "background-%s.png" % b)
 
             self.images["background"][b] = pygame.image.load(path).convert()
@@ -281,14 +280,17 @@ class FlappyBird(base.PyGameWrapper):
                 self._generatePipes(offset=-75 + self.width * 1.5)
             ])
 
-        color = self.rng.choice(["day", "night"])
-        self.backdrop.background_image = self.images["background"][color]
+        if self.simple:
+            self.backdrop.background_image = self.images["background"]["black"]
+            self.player.init(self.init_pos, "red")
+            self.pipe_color = self.rng.choice(["green"])
+        else:
+            color = self.rng.choice(["day", "night"])
+            self.backdrop.background_image = self.images["background"][color]
+            color = self.rng.choice(["red", "blue", "yellow"])
+            self.player.init(self.init_pos, color)
+            self.pipe_color = self.rng.choice(["red", "green"])
 
-        # instead of recreating
-        color = self.rng.choice(["red", "blue", "yellow"])
-        self.player.init(self.init_pos, color)
-
-        self.pipe_color = self.rng.choice(["red", "green"])
         for i, p in enumerate(self.pipe_group):
             self._generatePipes(offset=self.pipe_offsets[i], pipe=p)
 
@@ -319,8 +321,8 @@ class FlappyBird(base.PyGameWrapper):
         """
         pipes = []
         for p in self.pipe_group:
-            if p.x + p.width/2 > self.player.pos_x  :
-                pipes.append((p, p.x + p.width/2 - self.player.pos_x ))
+            if p.x + p.width / 2 > self.player.pos_x:
+                pipes.append((p, p.x + p.width / 2 - self.player.pos_x))
 
         pipes.sort(key=lambda p: p[1])
 
@@ -334,11 +336,11 @@ class FlappyBird(base.PyGameWrapper):
             "player_y": self.player.pos_y,
             "player_vel": self.player.vel,
 
-            "next_pipe_dist_to_player": next_pipe.x + next_pipe.width/2 - self.player.pos_x ,
+            "next_pipe_dist_to_player": next_pipe.x + next_pipe.width / 2 - self.player.pos_x,
             "next_pipe_top_y": next_pipe.gap_start,
             "next_pipe_bottom_y": next_pipe.gap_start + self.pipe_gap,
 
-            "next_next_pipe_dist_to_player": next_next_pipe.x + next_next_pipe.width/2 - self.player.pos_x ,
+            "next_next_pipe_dist_to_player": next_next_pipe.x + next_next_pipe.width / 2 - self.player.pos_x,
             "next_next_pipe_top_y": next_next_pipe.gap_start,
             "next_next_pipe_bottom_y": next_next_pipe.gap_start + self.pipe_gap
         }
@@ -397,14 +399,14 @@ class FlappyBird(base.PyGameWrapper):
             hit = pygame.sprite.spritecollide(
                 self.player, self.pipe_group, False)
 
-            is_in_pipe = (p.x - p.width/2 - 20) <= self.player.pos_x < (p.x + p.width/2)
+            is_in_pipe = (p.x - p.width / 2 - 20) <= self.player.pos_x < (p.x + p.width / 2)
             for h in hit:  # do check to see if its within the gap.
                 top_pipe_check = (
-                    (self.player.pos_y - self.player.height/2 + 12) <= h.gap_start) and is_in_pipe
+                                         (self.player.pos_y - self.player.height / 2 + 12) <= h.gap_start) and is_in_pipe
                 bot_pipe_check = (
-                    (self.player.pos_y +
-                     self.player.height) > h.gap_start +
-                    self.pipe_gap) and is_in_pipe
+                                         (self.player.pos_y +
+                                          self.player.height) > h.gap_start +
+                                         self.pipe_gap) and is_in_pipe
 
                 if top_pipe_check:
                     self.lives -= 1
