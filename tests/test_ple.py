@@ -45,6 +45,11 @@ class MyTestCase(unittest.TestCase):
         game = MonsterKong()
         self.run_a_game(game)
 
+    def test_flappybird_simple(self):
+        from ple.games.flappybird import FlappyBird
+        game = FlappyBird(simple=True)
+        self.run_a_game(game)
+
     def test_flappybird(self):
         from ple.games.flappybird import FlappyBird
         game = FlappyBird()
